@@ -1,0 +1,41 @@
+# Rusty Query Lab
+
+A lightweight SQL playground built with Rust, SQLite, SQLx, and Iced.
+
+## Overview
+
+Rusty Query Lab is a small desktop SQL playground written in Rust.
+It provides a code editor for writing SQL queries 
+and a result panel for displaying query results.
+
+## Features
+
+- Write SQL queries in a built-in editor
+- Execute queries against SQLite
+- Display query results
+- Create and modify database tables
+- Switch between different application modes
+
+## Technologies
+
+- **Rust** — application programming language
+- **SQLite** — database engine
+- **SQLx** — database access
+- **Tokio** — asynchronous runtime
+- **Iced** — GUI framework
+
+## Getting Started
+
+### Requirements
+
+- Rust
+- Cargo
+
+Clone the repository and run:
+
+cargo run
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 or later.
+See [LICENSE.md](LICENSE.md) for details.
