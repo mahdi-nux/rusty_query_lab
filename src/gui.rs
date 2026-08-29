@@ -1,9 +1,10 @@
 use iced::{Element, widget::{self, text_editor}, Task, Length};
 use sqlx::SqlitePool;
 
-use crate::database::{init, run_query};
+use crate::{database::{init, run_query}, style::output};
 
 pub struct State {
+    db_address: String,
     pool: Option<SqlitePool>,
     mode: bool,
     query: text_editor::Content,
@@ -13,6 +14,7 @@ pub struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
+            db_address: "".to_string(),
             pool: None,
             mode: false,
             query: text_editor::Content::new(),
@@ -23,6 +25,7 @@ impl Default for State {
 
 #[derive(Clone)]
 pub enum Message {
+    DatabaseAddress(String),
     ChangeMode(bool),
     NewQuery(text_editor::Action),
     Run,
@@ -40,9 +43,12 @@ pub fn view(state: &State) -> Element<'_, Message> {
     widget::column![
         widget::row![
             mode,
-            widget::space().width(Length::Fill),
+            widget::text_input("Database Address", &state.db_address)
+                .width(Length::Fill)
+                .on_input(|address| Message::DatabaseAddress(address)),
             widget::button("Run >").on_press(Message::Run),
-        ],
+        ]
+        .spacing(10),
         widget::text_editor(&state.query)
             .on_action(Message::NewQuery)
             .height(Length::FillPortion(1)),
@@ -52,7 +58,9 @@ pub fn view(state: &State) -> Element<'_, Message> {
             )
             .width(Length::Fill),
         )
-        .height(Length::FillPortion(1)),
+        .height(Length::FillPortion(1))
+        .padding(5)
+        .style(output),
     ]
     .spacing(10)
     .padding(10)
@@ -61,6 +69,10 @@ pub fn view(state: &State) -> Element<'_, Message> {
 
 pub fn update(state: &mut State, message: Message) -> Task<Message> {
     match message {
+        Message::DatabaseAddress(address) => {
+            state.db_address = address;
+            Task::none()
+        }
         Message::ChangeMode(new_mode) => {
             state.mode = new_mode; 
             Task::none()  
@@ -70,8 +82,9 @@ pub fn update(state: &mut State, message: Message) -> Task<Message> {
             Task::none()
         }  
         Message::Run => {
+            let address = state.db_address.clone();
             Task::perform(
-                init(),
+                init(address),
                 |result| Message::InitComplete(
                     result.map_err(|err| err.to_string())
                 ),
@@ -79,17 +92,22 @@ pub fn update(state: &mut State, message: Message) -> Task<Message> {
         }
         Message::InitComplete(result) => {
             match result {
-                Ok(pool) => state.pool = Some(pool),
-                Err(error) => state.result = format!("(Err): {}", error),
+                Ok(pool) => {
+                    state.pool = Some(pool.clone());
+
+                    let query = state.query.text();
+                    Task::perform(
+                        run_query(pool, query, state.mode), 
+                        |result| Message::QueryResult(
+                            result.map_err(|err| err.to_string())
+                        ),
+                    )
+                }
+                Err(error) => {
+                    state.result = format!("(Err): {}", error);
+                    Task::none()
+                }
             }
-            let pool = state.pool.clone().unwrap();
-            let query = state.query.text();
-            Task::perform(
-                run_query(pool, query, state.mode),
-                |result| Message::QueryResult(
-                    result.map_err(|err| err.to_string())
-                ),
-            )
         }
         Message::QueryResult(result) => {
             match result {

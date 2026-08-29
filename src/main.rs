@@ -1,5 +1,6 @@
 mod database;
 mod gui;
+mod style;
 
 use crate::gui::{view, update};
 

@@ -1,8 +1,10 @@
 use sqlx::{SqlitePool, AssertSqlSafe};
 
-pub async fn init() -> Result<SqlitePool, sqlx::Error> {
-    let my_pool = SqlitePool::connect("sqlite://myDatabase.db").await?;
+pub async fn init(address: String) -> Result<SqlitePool, sqlx::Error> {
+    let format = format!("sqlite://{}", address);
+    let my_pool = SqlitePool::connect(&format).await?;
 
+    println!("DATABASE URL: {}", format);
     Ok(my_pool)
 }
 
