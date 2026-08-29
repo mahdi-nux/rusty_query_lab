@@ -4,6 +4,7 @@ use sqlx::SqlitePool;
 use crate::{database::{init, run_query}, style::output};
 
 pub struct State {
+    theme: bool,
     db_address: String,
     pool: Option<SqlitePool>,
     mode: bool,
@@ -14,6 +15,7 @@ pub struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
+            theme: false,
             db_address: "".to_string(),
             pool: None,
             mode: false,
@@ -23,8 +25,15 @@ impl Default for State {
     }
 }
 
+impl State {
+    pub fn is_dark(&self) -> bool {
+        self.theme
+    }
+}
+
 #[derive(Clone)]
 pub enum Message {
+    ChangeTheme(bool),
     DatabaseAddress(String),
     ChangeMode(bool),
     NewQuery(text_editor::Action),
@@ -35,14 +44,19 @@ pub enum Message {
 }
 
 pub fn view(state: &State) -> Element<'_, Message> {
-    let mode: Element<'_, Message> = if state.mode {
+    let theme: Element<'_, Message> = if state.theme {
+        widget::button("Light").on_press(Message::ChangeTheme(false)).into()
+    } else {
+        widget::button("Dark").on_press(Message::ChangeTheme(true)).into()
+    };
+    let db_mode: Element<'_, Message> = if state.mode {
         widget::button("Fetch").on_press(Message::ChangeMode(false)).into()
     } else {
         widget::button("Execute").on_press(Message::ChangeMode(true)).into()
     };
     widget::column![
         widget::row![
-            mode,
+            db_mode,
             widget::text_input("Database Address", &state.db_address)
                 .width(Length::Fill)
                 .on_input(|address| Message::DatabaseAddress(address)),
@@ -60,7 +74,12 @@ pub fn view(state: &State) -> Element<'_, Message> {
         )
         .height(Length::FillPortion(1))
         .padding(5)
-        .style(output),
+        .style(|theme| output(theme, state.theme)),
+        widget::row![
+            theme,
+            widget::space().width(Length::Fill),
+        ]
+        .spacing(10),
     ]
     .spacing(10)
     .padding(10)
@@ -69,6 +88,10 @@ pub fn view(state: &State) -> Element<'_, Message> {
 
 pub fn update(state: &mut State, message: Message) -> Task<Message> {
     match message {
+        Message::ChangeTheme(other_theme) => {
+            state.theme = other_theme;
+            Task::none()
+        }
         Message::DatabaseAddress(address) => {
             state.db_address = address;
             Task::none()

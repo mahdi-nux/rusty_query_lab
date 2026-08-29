@@ -1,10 +1,35 @@
-use sqlx::{SqlitePool, AssertSqlSafe};
+use sqlx::{AssertSqlSafe, Column, Row, SqlitePool, TypeInfo, ValueRef, sqlite::{SqliteColumn, SqliteRow, SqliteValueRef}};
+
+fn datatype_detection(
+    row: &SqliteRow, 
+    column: &SqliteColumn, 
+    value: SqliteValueRef<'_>) -> String {
+    match value.type_info().name() {
+        "INTEGER" => {
+            row.get::<i64, _>(column.name()).to_string()
+        }
+        "REAL" => {
+            row.get::<f64, _>(column.name()).to_string()
+        }
+        "TEXT" => {
+            row.get::<String, _>(column.name())
+        }
+        "BLOB" => {
+            let blob = row.get::<Vec<u8>, _>(column.name());
+            let mut result = String::new();
+            for byte in blob {
+                result.push_str(&format!("{:02X} ", byte));
+            }
+            result
+        }
+        _ => "Error".to_string(),
+    }
+}
 
 pub async fn init(address: String) -> Result<SqlitePool, sqlx::Error> {
-    let format = format!("sqlite://{}", address);
-    let my_pool = SqlitePool::connect(&format).await?;
+    let my_pool = SqlitePool::connect(&format!("sqlite://{}", address)).await?;
 
-    println!("DATABASE URL: {}", format);
+    println!("DATABASE URL: {}", format!("sqlite://{}", address));
     Ok(my_pool)
 }
 
@@ -19,10 +44,30 @@ pub async fn run_query(
         .fetch_all(&connection)
         .await?;
 
-        for row in rows {
-            result.push_str(&format!("{:?}\n", row));
-        }
+        if let Some(first_row) = rows.first() {
+            for (index, column) in first_row.columns().iter().enumerate() {
+                result.push_str(column.name());
 
+                if index + 1 == first_row.columns().len() {
+                    result.push_str("\n");
+                } else {
+                    result.push_str(" | ");
+                }
+            }
+        }
+        for row in rows {
+            let column_count = row.columns().len();
+            for (index, column) in row.columns().iter().enumerate() {
+                let raw_data = row.try_get_raw(column.name())?;
+                result.push_str(&datatype_detection(&row, column, raw_data));
+                
+                if index + 1 == column_count {
+                    result.push_str("\n");
+                } else {
+                    result.push_str(" | ");
+                }
+            }
+        }
     } else {
         sqlx::query(AssertSqlSafe(user_query))
             .execute(&connection)
