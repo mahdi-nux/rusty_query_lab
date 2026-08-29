@@ -2,9 +2,13 @@
 
 A lightweight SQL playground built with Rust, SQLite, SQLx, and Iced.
 
+## Screenshot
+
+![Rusty Query Lab v0.1](screenshot_from_v0-1.png)
+
 ## Overview
 
-Rusty Query Lab is a small desktop SQL playground written in Rust.
+RQ Lab is a small desktop SQL playground written in Rust.
 It provides a code editor for writing SQL queries 
 and a result panel for displaying query results.
 
