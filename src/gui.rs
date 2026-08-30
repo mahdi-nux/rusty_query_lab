@@ -1,10 +1,10 @@
 use iced::{Element, widget::{self, text_editor}, Task, Length};
 use sqlx::SqlitePool;
 
-use crate::{database::{init, run_query}, style::output};
+use crate::{database::{init, run_query}, setting::{Setting, load_setting, update_setting}, style::output};
 
 pub struct State {
-    theme: bool,
+    setting: Setting,
     db_address: String,
     pool: Option<SqlitePool>,
     mode: bool,
@@ -14,8 +14,14 @@ pub struct State {
 
 impl Default for State {
     fn default() -> Self {
+        let default_setting = Setting::default();
+        let setting = match load_setting(&default_setting) {
+            Ok(config) => config,
+            Err(_) => default_setting,
+        };
+
         Self {
-            theme: false,
+            setting: setting,
             db_address: "".to_string(),
             pool: None,
             mode: false,
@@ -27,7 +33,7 @@ impl Default for State {
 
 impl State {
     pub fn is_dark(&self) -> bool {
-        self.theme
+        self.setting.theme
     }
 }
 
@@ -44,7 +50,7 @@ pub enum Message {
 }
 
 pub fn view(state: &State) -> Element<'_, Message> {
-    let theme: Element<'_, Message> = if state.theme {
+    let theme: Element<'_, Message> = if state.setting.theme {
         widget::button("Light").on_press(Message::ChangeTheme(false)).into()
     } else {
         widget::button("Dark").on_press(Message::ChangeTheme(true)).into()
@@ -74,7 +80,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
         )
         .height(Length::FillPortion(1))
         .padding(5)
-        .style(|theme| output(theme, state.theme)),
+        .style(|theme| output(theme, state.setting.theme)),
         widget::row![
             theme,
             widget::space().width(Length::Fill),
@@ -89,7 +95,10 @@ pub fn view(state: &State) -> Element<'_, Message> {
 pub fn update(state: &mut State, message: Message) -> Task<Message> {
     match message {
         Message::ChangeTheme(other_theme) => {
-            state.theme = other_theme;
+            state.setting.theme = other_theme;
+            if let Err(error) = update_setting(&state.setting) {
+                state.result = error.to_string();
+            }
             Task::none()
         }
         Message::DatabaseAddress(address) => {

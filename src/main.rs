@@ -1,11 +1,11 @@
 mod database;
 mod gui;
 mod style;
+mod setting;
 
 use crate::gui::{view, update};
 
 fn main() -> iced::Result {
-    // iced::run(update, view)
     iced::application(
         gui::State::default,
         update,
