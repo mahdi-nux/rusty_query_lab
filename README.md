@@ -19,6 +19,8 @@ and a result panel for displaying query results.
 - Display query results
 - Create and modify database tables
 - Switch between different application modes
+- Switch between light and dark themes
+- Persist application settings between sessions
 
 ## Technologies
 
@@ -27,6 +29,9 @@ and a result panel for displaying query results.
 - **SQLx** — database access
 - **Tokio** — asynchronous runtime
 - **Iced** — GUI framework
+- **Serde** — serialization and deserialization
+- **Serde JSON** — JSON-based application settings
+- **dirs** — locating platform-specific user directories
 
 ## Getting Started
 
