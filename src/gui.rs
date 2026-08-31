@@ -1,4 +1,11 @@
-use iced::{Element, widget::{self, text_editor}, Task, Length};
+use iced::{
+    Element, 
+    widget::{self, text_editor}, 
+    Task, 
+    Length, 
+    Font
+};
+use rfd::{AsyncFileDialog, FileHandle};
 use sqlx::SqlitePool;
 use comfy_table::Table;
 
@@ -48,10 +55,12 @@ impl State {
 pub enum Message {
     ChangeTheme(bool),
     DatabaseAddress(String),
+    SelectingDB,
     ChangeMode(bool),
     NewQuery(text_editor::Action),
     Run,
 
+    DbSelected(Option<FileHandle>),
     InitComplete(Result<SqlitePool, String>),
     QueryResult(Result<(Table, String), String>),
 }
@@ -77,18 +86,23 @@ pub fn view(state: &State) -> Element<'_, Message> {
         widget::row![
             db_mode,
             widget::text_input("Database Address", &state.db_address)
-                .width(Length::Fill)
+                .width(Length::FillPortion(2))
                 .on_input(|address| Message::DatabaseAddress(address)),
+            widget::button("DB selection").on_press(Message::SelectingDB),
+            widget::space().width(Length::FillPortion(1)),
             widget::button("Run >").on_press(Message::Run),
         ]
         .spacing(10),
         widget::text_editor(&state.query)
+            .font(Font::with_name("Droid Sans Mono"))
+            .size(20)
             .on_action(Message::NewQuery)
             .height(Length::FillPortion(1)),
         widget::container(
             widget::scrollable(
                 widget::text(result)
-                    .font(iced::Font::MONOSPACE),
+                    .font(Font::MONOSPACE)
+                    .size(18),
             )
             .width(Length::Fill),
         )
@@ -117,6 +131,24 @@ pub fn update(state: &mut State, message: Message) -> Task<Message> {
         }
         Message::DatabaseAddress(address) => {
             state.db_address = address;
+            Task::none()
+        }
+        Message::SelectingDB => {
+            Task::perform(
+                AsyncFileDialog::new()
+                    .add_filter("SQLite DataBase", &["db", "sqlite", "sqlite3"])
+                    .pick_file(), 
+                |file| Message::DbSelected(file)
+            )
+        }
+        Message::DbSelected(file) => {
+            if let Some(the_file) = file {
+                state.db_address = the_file
+                    .path()
+                    .to_path_buf()
+                    .to_string_lossy()
+                    .to_string();
+            }
             Task::none()
         }
         Message::ChangeMode(new_mode) => {

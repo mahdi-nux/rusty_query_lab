@@ -51,7 +51,7 @@ pub async fn run_query(
     table
         .load_style(UTF8_FULL.with_rounded_corners())
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_width(150);
+        .set_width(120);
     
     if mode {
         let rows = sqlx::query(AssertSqlSafe(user_query))

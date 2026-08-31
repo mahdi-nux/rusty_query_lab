@@ -4,7 +4,7 @@ A lightweight SQL playground built with Rust, SQLite, SQLx, and Iced.
 
 ## Screenshot
 
-![Rusty Query Lab v0.2](screenshots/screenshot_from_v0-5-1.png)
+![Rusty Query Lab v0.2](screenshots/screenshot_from_v0-5-2.png)
 
 ## Overview
 
@@ -33,6 +33,7 @@ and a result panel for displaying query results.
 - **Serde** — serialization and deserialization
 - **Serde JSON** — JSON-based application settings
 - **dirs** — locating platform-specific user directories
+- **rfd** — native file dialogs for selecting database files
 
 ## Getting Started
 

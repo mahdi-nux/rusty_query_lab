@@ -10,6 +10,10 @@ fn main() -> iced::Result {
         gui::State::default,
         update,
         view
-    ).theme(|state: &gui::State| style::theme(state.is_dark()))
+    )
+    .theme(|state: &gui::State| style::theme(state.is_dark()))
+    .font(include_bytes!(
+        "../fonts/DroidSansMono.ttf"
+    ).as_slice())
     .run()
 }
