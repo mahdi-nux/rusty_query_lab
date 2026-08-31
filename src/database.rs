@@ -7,7 +7,7 @@ use sqlx::{
     ValueRef, 
     sqlite::{SqliteColumn, SqliteRow, SqliteValueRef}
 };
-use comfy_table::Table;
+use comfy_table::{Table, presets::UTF8_FULL, ContentArrangement};
 
 fn datatype_detection(
     row: &SqliteRow, 
@@ -48,6 +48,10 @@ pub async fn run_query(
     mode: bool
 ) -> Result<(Table, String), sqlx::Error> {
     let mut table = Table::new();
+    table
+        .load_style(UTF8_FULL.with_rounded_corners())
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_width(150);
     
     if mode {
         let rows = sqlx::query(AssertSqlSafe(user_query))

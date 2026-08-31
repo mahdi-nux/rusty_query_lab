@@ -4,7 +4,7 @@ A lightweight SQL playground built with Rust, SQLite, SQLx, and Iced.
 
 ## Screenshot
 
-![Rusty Query Lab v0.2](screenshots/screenshot_from_v0-5.png)
+![Rusty Query Lab v0.2](screenshots/screenshot_from_v0-5-1.png)
 
 ## Overview
 
