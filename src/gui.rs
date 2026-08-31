@@ -1,7 +1,12 @@
 use iced::{Element, widget::{self, text_editor}, Task, Length};
 use sqlx::SqlitePool;
+use comfy_table::Table;
 
-use crate::{database::{init, run_query}, setting::{Setting, load_setting, update_setting}, style::output};
+use crate::{
+    database::{init, run_query}, 
+    setting::{Setting, load_setting, update_setting}, 
+    style::output
+};
 
 pub struct State {
     setting: Setting,
@@ -9,7 +14,8 @@ pub struct State {
     pool: Option<SqlitePool>,
     mode: bool,
     query: text_editor::Content,
-    result: String,
+    table_result: Table,
+    str_result: String,
 }
 
 impl Default for State {
@@ -26,7 +32,8 @@ impl Default for State {
             pool: None,
             mode: false,
             query: text_editor::Content::new(),
-            result: String::new(),
+            table_result: Table::new(),
+            str_result: String::new(),
         }
     }
 }
@@ -46,10 +53,16 @@ pub enum Message {
     Run,
 
     InitComplete(Result<SqlitePool, String>),
-    QueryResult(Result<String, String>),
+    QueryResult(Result<(Table, String), String>),
 }
 
 pub fn view(state: &State) -> Element<'_, Message> {
+    let result = if state.mode {
+        state.table_result.to_string()
+    } else {
+        state.str_result.clone()
+    };
+
     let theme: Element<'_, Message> = if state.setting.theme {
         widget::button("Light").on_press(Message::ChangeTheme(false)).into()
     } else {
@@ -74,7 +87,8 @@ pub fn view(state: &State) -> Element<'_, Message> {
             .height(Length::FillPortion(1)),
         widget::container(
             widget::scrollable(
-                widget::text(&state.result),
+                widget::text(result)
+                    .font(iced::Font::MONOSPACE),
             )
             .width(Length::Fill),
         )
@@ -97,7 +111,7 @@ pub fn update(state: &mut State, message: Message) -> Task<Message> {
         Message::ChangeTheme(other_theme) => {
             state.setting.theme = other_theme;
             if let Err(error) = update_setting(&state.setting) {
-                state.result = error.to_string();
+                state.str_result = error.to_string();
             }
             Task::none()
         }
@@ -136,15 +150,18 @@ pub fn update(state: &mut State, message: Message) -> Task<Message> {
                     )
                 }
                 Err(error) => {
-                    state.result = format!("(Err): {}", error);
+                    state.str_result = format!("(Err): {}", error);
                     Task::none()
                 }
             }
         }
         Message::QueryResult(result) => {
             match result {
-                Ok(outcome) => state.result = outcome,
-                Err(error) => state.result = format!("(Err): {}", error),
+                Ok((table, outcome)) => {
+                    state.table_result = table;
+                    state.str_result = outcome;
+                }
+                Err(error) => state.str_result = format!("(Err): {}", error),
             }
             Task::none()
         }

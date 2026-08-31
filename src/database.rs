@@ -1,4 +1,13 @@
-use sqlx::{AssertSqlSafe, Column, Row, SqlitePool, TypeInfo, ValueRef, sqlite::{SqliteColumn, SqliteRow, SqliteValueRef}};
+use sqlx::{
+    AssertSqlSafe, 
+    Column, 
+    Row, 
+    SqlitePool, 
+    TypeInfo, 
+    ValueRef, 
+    sqlite::{SqliteColumn, SqliteRow, SqliteValueRef}
+};
+use comfy_table::Table;
 
 fn datatype_detection(
     row: &SqliteRow, 
@@ -37,43 +46,40 @@ pub async fn run_query(
     connection: SqlitePool,
     user_query: String,
     mode: bool
-) -> Result<String, sqlx::Error> {
-    let mut result = String::new();
+) -> Result<(Table, String), sqlx::Error> {
+    let mut table = Table::new();
+    
     if mode {
         let rows = sqlx::query(AssertSqlSafe(user_query))
         .fetch_all(&connection)
         .await?;
 
         if let Some(first_row) = rows.first() {
-            for (index, column) in first_row.columns().iter().enumerate() {
-                result.push_str(column.name());
+            let mut table_header: Vec<&str> = Vec::new();
 
-                if index + 1 == first_row.columns().len() {
-                    result.push_str("\n");
-                } else {
-                    result.push_str(" | ");
-                }
+            for column in first_row.columns().iter() {
+                table_header.push(column.name());
             }
+            table.set_header(&table_header);
         }
         for row in rows {
-            let column_count = row.columns().len();
-            for (index, column) in row.columns().iter().enumerate() {
+            let mut table_rows: Vec<String> = Vec::new();
+
+            for column in row.columns().iter() {
                 let raw_data = row.try_get_raw(column.name())?;
-                result.push_str(&datatype_detection(&row, column, raw_data));
-                
-                if index + 1 == column_count {
-                    result.push_str("\n");
-                } else {
-                    result.push_str(" | ");
-                }
+                table_rows.push(datatype_detection(&row, column, raw_data));
             }
+            table.add_row(&table_rows);
         }
     } else {
         sqlx::query(AssertSqlSafe(user_query))
             .execute(&connection)
             .await?;
-
-        result.push_str("(Ok): Operation was successful.");
     }
-    Ok(result)
+    Ok(
+        (
+            table,
+            "(Ok): Operation was successful.".to_string()
+        )
+    )
 }
