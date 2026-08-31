@@ -32,8 +32,8 @@ and a result panel for displaying query results.
 - **Comfy Table** — formatting query results as tables
 - **Serde** — serialization and deserialization
 - **Serde JSON** — JSON-based application settings
-- **dirs** — locating platform-specific user directories
-- **rfd** — native file dialogs for selecting database files
+- **Dirs** — locating platform-specific user directories
+- **Rfd** — native file dialogs for selecting database files
 
 ## Getting Started
 
